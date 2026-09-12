@@ -370,6 +370,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         self,
         interaction: discord.Interaction["BallsDexBot"],
         user: discord.User | None = None,
+        special: SpecialEnabledTransform | None = None,
         filter: FilteringChoices | None = None,
         index: app_commands.Range[int, 1] = 1,
     ):
@@ -380,6 +381,8 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         ----------
         user: discord.Member
             The user you would like to see
+        special: Special
+            The special you would like to see
         filter: FilteringChoices
             Filter the last caught countryball by a specific filter.
             Only works if the user has caught at least one countryball.
@@ -419,6 +422,10 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             return
 
         query = player.balls.select_related("ball", "trade_player").all()
+        special_msg = ""
+        if special:
+            special_msg = f"{special.name} "
+            query = query.filter(special=special)
         filter_msg = ""
         if filter:
             filter_msg = f" with the `{filter.value.replace('_', ' ')}` filter"
@@ -434,7 +441,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
             else:
                 who = "You don't" if user is None else f"{user_obj.display_name} doesn't"
                 await interaction.followup.send(
-                    f"{who} have {index} caught {settings.plural_collectible_name}{filter_msg} yet.", ephemeral=True
+                    f"{who} have {index} caught {special_msg}{settings.plural_collectible_name}{filter_msg} yet.", ephemeral=True
                 )
             return
 
@@ -443,7 +450,7 @@ class Balls(commands.GroupCog, group_name=settings.balls_slash_name):
         if user is not None and user.id != interaction.user.id:
             content = (
                 f"You are viewing {user.display_name}'s last caught "
-                f"{settings.collectible_name}{filter_msg}{index_msg}.\n{content}"
+                f"{special_msg}{settings.collectible_name}{filter_msg}{index_msg}.\n{content}"
             )
         else:
             content = (
